@@ -68,9 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SearchScreen(
-          initialQuery: initialQuery ?? '',
-          intent: intent,
-          topTab: topTab,
+          // initialQuery: initialQuery ?? '',
+          // intent: intent,
+          // topTab: topTab,
         ),
       ),
     );

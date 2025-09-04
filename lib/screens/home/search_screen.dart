@@ -1,183 +1,290 @@
 import 'package:flutter/material.dart';
-import '../../theme/brand.dart';
+import 'package:sands_bayt/screens/home/filter/filter_screen.dart';
+import 'package:sands_bayt/theme/brand.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({
-    super.key,
-    this.initialQuery = '',
-    this.intent,
-    this.topTab,
-  });
-
-  final String initialQuery;
-  final String? intent; // e.g., Buy / Rent
-  final int? topTab; // e.g., Properties / New Projects / Transactions
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialQuery,
-  );
+  final TextEditingController _controller = TextEditingController();
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  // Data (sample)
+  final List<String> _cities = const ['Dubai', 'Sharjah', 'Abu Dhabi'];
+  final Map<String, List<String>> _areasByCity = const {
+    'Dubai': ['Downtown Dubai', 'Business Bay', 'Dubai Marina'],
+    'Sharjah': ['Tilal City', 'Masaar'],
+    'Abu Dhabi': ['Al Reem Island', 'Yas Island'],
+  };
+  final Map<String, List<String>> _subsByArea = const {
+    'Downtown Dubai': [
+      'The Central Downtown Tower A',
+      'The Central Downtown Tower B',
+      'The Central Downtown Tower C',
+      'The Central Downtown Tower D',
+    ],
+    'Business Bay': ['Executive Towers', 'Bay Square'],
+    'Dubai Marina': ['Marina Gate', 'Emaar 6 Towers'],
+    'Tilal City': ['Masaar', 'Kaya', 'Sarai'],
+    'Masaar': ['Kaya', 'Sequoia', 'Sarai'],
+    'Al Reem Island': ['Sun & Sky Towers', 'Shams Gate'],
+    'Yas Island': ['Ansam', 'West Yas'],
+  };
+
+  final List<String> _recent = ['Dubai'];
+
+  String? _selectedCity;
+  String? _selectedArea;
+  String? _selectedSub;
+
+  String? get _currentLabel => _selectedSub ?? _selectedArea ?? _selectedCity;
+
+  bool get _atCityLevel => _selectedCity == null;
+  List<String> get _currentOptions {
+    if (_atCityLevel) return _cities;
+    if (_selectedArea == null) return _areasByCity[_selectedCity] ?? const [];
+    return _subsByArea[_selectedArea] ?? const [];
   }
 
-  void _performSearch(String q) {
-    if (q.trim().isEmpty) return;
-    // TODO: call your API / navigate to results page
-    // For now just close and pass back the query if you like:
-    Navigator.of(context).pop(); // or push to a results screen
+  String get _popularTitle {
+    if (_selectedArea != null) return 'Popular Locations in ${_selectedArea!}';
+    if (_selectedCity != null) return 'Popular Locations in ${_selectedCity!}';
+    return 'Popular Locations';
+  }
+
+  void _tapOption(String label) {
+    setState(() {
+      if (_atCityLevel) {
+        _selectedCity = label;
+      } else if (_selectedArea == null) {
+        _selectedArea = label;
+      } else {
+        _selectedSub = label;
+      }
+    });
+  }
+
+  void _clearOneLevel() {
+    setState(() {
+      if (_selectedSub != null) {
+        _selectedSub = null;
+      } else if (_selectedArea != null) {
+        _selectedArea = null;
+      } else if (_selectedCity != null) {
+        _selectedCity = null;
+      }
+    });
+  }
+
+  void _resetAll() {
+    setState(() {
+      _controller.clear();
+      _selectedCity = null;
+      _selectedArea = null;
+      _selectedSub = null;
+    });
+  }
+
+  void _onSubmitQuery(String q) {
+    final t = q.trim();
+    if (t.isEmpty) return;
+    if (!_recent.contains(t)) setState(() => _recent.insert(0, t));
+  }
+
+  void _goToFilterScreen() {
+    final filters = {
+      'query': _controller.text.trim(),
+      'level': _selectedSub != null
+          ? 'sub'
+          : _selectedArea != null
+          ? 'area'
+          : _selectedCity != null
+          ? 'city'
+          : 'none', // <— new
+      'city': _selectedCity,
+      'area': _selectedArea,
+      'location': _selectedSub,
+      'selectedLabel': _currentLabel, // will be null if none
+    };
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => FilterScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Brand.cardLight,
       body: SafeArea(
-        top: false,
         child: Column(
           children: [
-            // Custom appbar with field
-            Container(
-              padding: EdgeInsets.fromLTRB(12, topPad + 8, 12, 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            // close + search
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    color: Brand.textDark,
-                    onPressed: () => Navigator.of(context).pop(),
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 26,
+                      color: Brand.darkTeal,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Expanded(
-                    child: TextField(
+                    child: _SearchField(
                       controller: _controller,
-                      autofocus: true,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: _performSearch,
-                      decoration: InputDecoration(
-                        hintText: 'Search for a locality, area or city',
-                        filled: true,
-                        fillColor: const Color(0xFFF7FAF9),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: Brand.borderLight,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: Brand.borderLight,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: Brand.green,
-                            width: 1.6,
-                          ),
-                        ),
-                      ),
+                      onSubmitted: _onSubmitQuery,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Brand.darkTeal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => _performSearch(_controller.text),
-                    child: const Icon(Icons.search_rounded),
                   ),
                 ],
               ),
             ),
 
-            // Body: suggestions / history / results placeholder
+            // current selection (one chip)
+            if (_currentLabel != null)
+              Container(
+                width: double.infinity,
+                color: Brand.lightTealBg,
+
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+
+                child: Row(
+                  children: [
+                    const SizedBox(width: 6),
+                    InputChip(
+                      backgroundColor: Colors.white,
+                      // Make it pill/circular
+                      shape: const StadiumBorder(
+                        side: BorderSide(color: Brand.borderLight, width: 1),
+                      ),
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 2,
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: Text(
+                        _currentLabel!,
+                        style: const TextStyle(color: Brand.textDark),
+                      ),
+                      deleteIconColor: Brand.textDark,
+                      onDeleted: _clearOneLevel,
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 8),
+
+            // list
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
                 children: [
-                  if (widget.intent != null || widget.topTab != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        'Searching in: '
-                        '${widget.topTab == 0
-                            ? "Properties"
-                            : widget.topTab == 1
-                            ? "New Projects"
-                            : widget.topTab == 2
-                            ? "Transactions"
-                            : "All"}'
-                        '${widget.intent != null ? " • ${widget.intent}" : ""}',
-                        style: TextStyle(color: Brand.textMute, fontSize: 13),
-                      ),
-                    ),
-
-                  const Text(
-                    'Recent searches',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  const _SectionHeader(
+                    icon: Icons.history_rounded,
+                    title: 'Recently Searched Location',
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _chip('Marina'),
-                      _chip('Downtown'),
-                      _chip('JVC 2BR'),
-                      _chip('Off-plan near metro'),
-                    ],
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: _recent
+                        .map(
+                          (r) => _Pill(
+                            label: r,
+                            onTap: () {
+                              if (_cities.contains(r)) {
+                                setState(() {
+                                  _selectedCity = r;
+                                  _selectedArea = null;
+                                  _selectedSub = null;
+                                });
+                              } else {
+                                _controller.text = r;
+                              }
+                            },
+                          ),
+                        )
+                        .toList(),
                   ),
                   const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
+                  const Divider(
+                    height: 32,
+                    thickness: 1,
+                    color: Brand.borderLight,
+                  ),
 
-                  const Text(
-                    'Popular areas',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  _SectionHeader(
+                    icon: Icons.trending_up_rounded,
+                    title: _popularTitle,
                   ),
-                  const SizedBox(height: 12),
-                  ...[
-                    'Dubai Marina',
-                    'Downtown Dubai',
-                    'Business Bay',
-                    'Jumeirah Village Circle',
-                  ].map(
-                    (s) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(s),
-                      trailing: const Icon(Icons.north_east_rounded, size: 18),
-                      onTap: () => _performSearch(s),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: _currentOptions
+                        .map((p) => _Pill(label: p, onTap: () => _tapOption(p)))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 120),
+                ],
+              ),
+            ),
+
+            // bottom buttons
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: const BoxDecoration(
+                color: Brand.cardLight,
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 12,
+                    offset: Offset(0, -2),
+                    color: Color(0x11000000),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(
+                          color: Brand.darkTeal,
+                          width: 1.2,
+                        ), // brand accent
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Brand.darkTeal,
+                      ),
+                      onPressed: _resetAll,
+                      child: const Text('Reset'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Brand.darkTeal,
+                        foregroundColor: Brand.textOnPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                      ),
+                      onPressed: _goToFilterScreen,
+                      child: const Text('Done'),
                     ),
                   ),
                 ],
@@ -188,19 +295,98 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+}
 
-  Widget _chip(String label) {
+/// Search textfield with unified brand accents
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller, required this.onSubmitted});
+  final TextEditingController controller;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      autofocus: true,
+      textInputAction: TextInputAction.search,
+      onSubmitted: onSubmitted,
+      style: const TextStyle(color: Brand.textDark),
+      decoration: InputDecoration(
+        hintText: 'Search for a locality, area or city',
+        hintStyle: const TextStyle(color: Brand.textMute),
+        filled: true,
+        fillColor: Colors.white, // soft chip-like fill
+        prefixIcon: const Icon(Icons.search_rounded, color: Brand.textMute),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 16,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Brand.borderLight,
+            width: 1.0,
+          ), // light border
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Brand.darkTeal,
+            width: 1,
+          ), // teal focus
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.icon, required this.title});
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: Brand.textDark,
+    );
+    return Row(
+      children: [
+        Icon(icon, color: Brand.textDark), // matches screenshot
+        const SizedBox(width: 10),
+        Text(title, style: style),
+      ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label, this.onTap});
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => _performSearch(label),
+      onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
+          color: const Color(0xFFF7FAF9), // soft chip bg like screenshot
+          border: Border.all(
+            color: Brand.borderLight,
+            width: 1,
+          ), // subtle border
           borderRadius: BorderRadius.circular(24),
-          color: const Color(0xFFF7FAF9),
-          border: Border.all(color: Brand.borderLight),
         ),
-        child: Text(label),
+        child: Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Brand.textDark),
+        ),
       ),
     );
   }
