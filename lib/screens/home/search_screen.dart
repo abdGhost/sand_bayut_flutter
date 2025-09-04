@@ -95,28 +95,17 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _goToFilterScreen() {
-    final filters = {
-      'query': _controller.text.trim(),
-      'level': _selectedSub != null
-          ? 'sub'
-          : _selectedArea != null
-          ? 'area'
-          : _selectedCity != null
-          ? 'city'
-          : 'none', // <— new
-      'city': _selectedCity,
-      'area': _selectedArea,
-      'location': _selectedSub,
-      'selectedLabel': _currentLabel, // will be null if none
-    };
-
-    Navigator.push(context, MaterialPageRoute(builder: (_) => FilterScreen()));
+    // You can pass filters if needed; keeping navigation simple for now.
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FilterScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Brand.cardLight,
+      backgroundColor: Brand.scaffold,
       body: SafeArea(
         child: Column(
           children: [
@@ -127,10 +116,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.close_rounded,
-                      size: 26,
-                      color: Brand.darkTeal,
+                      size: 24,
+                      color: Brand.textDark,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -150,20 +139,20 @@ class _SearchScreenState extends State<SearchScreen> {
               Container(
                 width: double.infinity,
                 color: Brand.lightTealBg,
-
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
-
                 child: Row(
                   children: [
                     const SizedBox(width: 6),
                     InputChip(
                       backgroundColor: Colors.white,
-                      // Make it pill/circular
-                      shape: const StadiumBorder(
-                        side: BorderSide(color: Brand.borderLight, width: 1),
+                      // pill shape + subtle border
+                      shape: const StadiumBorder(),
+                      side: const BorderSide(
+                        color: Brand.borderLight,
+                        width: 1,
                       ),
                       labelPadding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -190,7 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   const _SectionHeader(
                     icon: Icons.history_rounded,
-                    title: 'Recently Searched Location',
+                    title: 'Recently Searched',
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -258,14 +247,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
-                          color: Brand.darkTeal,
+                          color: Brand.borderLight,
                           width: 1.2,
-                        ), // brand accent
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        foregroundColor: Brand.darkTeal,
+                        foregroundColor: Brand.textDark,
                       ),
                       onPressed: _resetAll,
                       child: const Text('Reset'),
@@ -315,7 +304,7 @@ class _SearchField extends StatelessWidget {
         hintText: 'Search for a locality, area or city',
         hintStyle: const TextStyle(color: Brand.textMute),
         filled: true,
-        fillColor: Colors.white, // soft chip-like fill
+        fillColor: Brand.fieldBg,
         prefixIcon: const Icon(Icons.search_rounded, color: Brand.textMute),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
@@ -323,17 +312,14 @@ class _SearchField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(
-            color: Brand.borderLight,
-            width: 1.0,
-          ), // light border
+          borderSide: const BorderSide(color: Brand.borderLight, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Brand.darkTeal,
-            width: 1,
-          ), // teal focus
+            color: Brand.green, // subtle green focus like screenshot
+            width: 1.4,
+          ),
         ),
       ),
     );
@@ -353,7 +339,7 @@ class _SectionHeader extends StatelessWidget {
     );
     return Row(
       children: [
-        Icon(icon, color: Brand.textDark), // matches screenshot
+        Icon(icon, color: Brand.textDark),
         const SizedBox(width: 10),
         Text(title, style: style),
       ],
@@ -368,24 +354,25 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: Brand.fieldBg,
       borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7FAF9), // soft chip bg like screenshot
-          border: Border.all(
-            color: Brand.borderLight,
-            width: 1,
-          ), // subtle border
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: Brand.textDark),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Brand.borderLight, width: 1),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Brand.textDark,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );

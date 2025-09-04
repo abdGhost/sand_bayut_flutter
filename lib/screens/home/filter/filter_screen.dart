@@ -31,7 +31,6 @@ class _FilterScreenState extends State<FilterScreen> {
   int _resultsCount = 0;
 
   void _recount() {
-    // TODO: replace with your real filter → count logic
     setState(() {
       _resultsCount = 0;
     });
@@ -62,14 +61,24 @@ class _FilterScreenState extends State<FilterScreen> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.of(context).padding;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: const Text('Filters'),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: Brand.borderLight),
+        ),
       ),
       body: Column(
         children: [
@@ -77,6 +86,9 @@ class _FilterScreenState extends State<FilterScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               children: [
+                const _Section(child: SizedBox.shrink()),
+
+                // TOP: Properties vs New Projects (PRIMARY solid pill)
                 _Section(
                   child: _SegmentedTwo(
                     left: 'Properties',
@@ -86,9 +98,11 @@ class _FilterScreenState extends State<FilterScreen> {
                       setState(() => _topTab = i);
                       _recount();
                     },
+                    variant: _SegVariant.primary,
                   ),
                 ),
 
+                // Buy vs Rent (SUBTLE soft style)
                 _Section(
                   child: _SegmentedTwo(
                     left: 'Buy',
@@ -99,6 +113,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       _recount();
                     },
                     dense: true,
+                    variant: _SegVariant.subtle,
+                    shape: _SegShape.rect, // ← make these rectangular
                   ),
                 ),
 
@@ -125,11 +141,38 @@ class _FilterScreenState extends State<FilterScreen> {
                       ),
                       Switch(
                         value: _byCommute,
-                        activeColor: Brand.green,
                         onChanged: (v) {
                           setState(() => _byCommute = v);
                           _recount();
                         },
+                        thumbColor: MaterialStateProperty.resolveWith((states) {
+                          if (states.contains(MaterialState.selected)) {
+                            return Colors.white;
+                          }
+                          return isLight
+                              ? Colors.white
+                              : const Color(0xFFE0E0E0);
+                        }),
+                        trackColor: MaterialStateProperty.resolveWith((states) {
+                          if (states.contains(MaterialState.selected)) {
+                            return isLight
+                                ? Brand.green.withOpacity(.45)
+                                : Brand.green.withOpacity(.60);
+                          }
+                          return isLight
+                              ? const Color(0xFFE8ECEF)
+                              : const Color(0xFF31363B);
+                        }),
+                        trackOutlineColor: MaterialStateProperty.resolveWith((
+                          states,
+                        ) {
+                          if (states.contains(MaterialState.selected)) {
+                            return Brand.green;
+                          }
+                          return isLight
+                              ? Brand.borderLight
+                              : Colors.transparent;
+                        }),
                       ),
                     ],
                   ),
@@ -149,7 +192,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search for localities, areas or cities',
                     filled: true,
-                    fillColor: const Color(0xFFF7FAF9),
+                    fillColor: Brand.fieldBg,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 14,
@@ -187,7 +230,6 @@ class _FilterScreenState extends State<FilterScreen> {
                     children: [
                       for (final tag in _selectedLocations) ...[
                         InputChip(
-                          // circular / pill shape
                           shape: const StadiumBorder(),
                           backgroundColor: Colors.white,
                           side: const BorderSide(
@@ -216,7 +258,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            backgroundColor: const Color(0xFFEFF7F4),
+                            backgroundColor: Brand.lightTealBg,
                             side: const BorderSide(
                               color: Brand.borderLight,
                               width: 1,
@@ -249,6 +291,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     setState(() => _propSegment = i);
                     _recount();
                   },
+                  variant: _SegVariant.subtle, // same soft style as Buy/Rent
                 ),
                 const SizedBox(height: 12),
 
@@ -356,11 +399,10 @@ class _FilterScreenState extends State<FilterScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // return selected filters to caller if you want
                       Navigator.pop(context, _collectFilters());
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Brand.green,
+                      backgroundColor: Brand.darkTeal,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -425,6 +467,11 @@ class _Section extends StatelessWidget {
   }
 }
 
+/// Variants for the 2-option segment
+enum _SegVariant { primary, subtle }
+
+enum _SegShape { pill, rect }
+
 class _SegmentedTwo extends StatelessWidget {
   const _SegmentedTwo({
     required this.left,
@@ -432,6 +479,8 @@ class _SegmentedTwo extends StatelessWidget {
     required this.index,
     required this.onChanged,
     this.dense = false,
+    this.variant = _SegVariant.subtle,
+    this.shape = _SegShape.pill, // ← NEW
   });
 
   final String left;
@@ -439,39 +488,71 @@ class _SegmentedTwo extends StatelessWidget {
   final int index;
   final ValueChanged<int> onChanged;
   final bool dense;
+  final _SegVariant variant;
+  final _SegShape shape; // ← NEW
 
   @override
   Widget build(BuildContext context) {
     final height = dense ? 40.0 : 48.0;
+    final radius = shape == _SegShape.pill ? 24.0 : 12.0;
+
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F6F4),
-        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: Brand.borderLight, width: 1),
       ),
-      child: Row(children: [_segBtn(left, 0), _segBtn(right, 1)]),
+      child: Row(
+        children: [_segBtn(left, 0, radius), _segBtn(right, 1, radius)],
+      ),
     );
   }
 
-  Widget _segBtn(String label, int i) {
+  Widget _segBtn(String label, int i, double radius) {
     final selected = index == i;
+
+    // Styles per variant
+    final Color selectedBg = (variant == _SegVariant.primary)
+        ? Brand.green
+        : Brand.lightTealBg;
+    final Color selectedText = (variant == _SegVariant.primary)
+        ? Colors.white
+        : Brand.textDark;
+    final BoxBorder? selectedBorder = (variant == _SegVariant.subtle)
+        ? Border.all(color: Brand.green, width: 1)
+        : null;
+
+    // Corners: pill uses full rounding; rect rounds only the outer edges
+    final BorderRadius br = (shape == _SegShape.pill)
+        ? BorderRadius.circular(radius)
+        : (i == 0
+              ? BorderRadius.only(
+                  topLeft: Radius.circular(radius),
+                  bottomLeft: Radius.circular(radius),
+                )
+              : BorderRadius.only(
+                  topRight: Radius.circular(radius),
+                  bottomRight: Radius.circular(radius),
+                ));
+
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: br,
         onTap: () => onChanged(i),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: selected ? Brand.green : Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
+            color: selected ? selectedBg : Colors.transparent,
+            borderRadius: br,
+            border: selected ? selectedBorder : null,
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : Brand.textDark,
+              color: selected ? selectedText : Brand.textDark,
             ),
           ),
         ),
@@ -504,7 +585,7 @@ class _ChoicePills extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: index == i ? const Color(0xFFEFF7F4) : Colors.white,
+                color: index == i ? Brand.lightTealBg : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: index == i ? Brand.green : Brand.borderLight,
@@ -513,7 +594,7 @@ class _ChoicePills extends StatelessWidget {
               ),
               child: Text(
                 options[i],
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Brand.textDark,
                 ),
@@ -541,7 +622,7 @@ class _TypeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFEFF7F4) : Colors.white,
+      color: selected ? Brand.lightTealBg : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
