@@ -12,16 +12,17 @@ class TopHero extends StatelessWidget {
     required this.onTabChanged,
     required this.intent,
     required this.onIntentChanged,
+    this.stickyAnchorKey,
   });
 
   final int topTab;
   final ValueChanged<int> onTabChanged;
   final String intent;
   final ValueChanged<String> onIntentChanged;
+  final Key? stickyAnchorKey;
 
-  // Tweak these to taste
-  static const double _imageHeight = 300; // taller background image
-  static const double _cardHeight = 188; // fixed height for 50/50 overlap
+  static const double _imageHeight = 300;
+  static const double _cardHeight = 188;
   static const double _sidePadding = 16;
 
   @override
@@ -34,7 +35,7 @@ class TopHero extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Background sky + skyline (NETWORK image)
+          // Background (gradient + NETWORK image)
           Container(
             height: _imageHeight,
             width: double.infinity,
@@ -54,7 +55,7 @@ class TopHero extends StatelessWidget {
             ),
           ),
 
-          // Wordmark left + circular FontAwesome icon right
+          // Wordmark + icon
           Positioned(
             left: _sidePadding,
             right: _sidePadding,
@@ -87,7 +88,6 @@ class TopHero extends StatelessWidget {
                     ],
                   ),
                   child: const Center(
-                    // Use any FA icon you prefer
                     child: FaIcon(
                       FontAwesomeIcons.houseChimney,
                       size: 16,
@@ -99,13 +99,12 @@ class TopHero extends StatelessWidget {
             ),
           ),
 
-          // Floating card — half inside image, half below
+          // Floating card (tabs + switch + search anchor)
           Positioned(
             left: _sidePadding,
             right: _sidePadding,
             top: _imageHeight - (_cardHeight / 2),
             child: Material(
-              // >>> Fix for “black corners”: give Material a rounded shape AND clip
               color: Colors.transparent,
               elevation: 6,
               shadowColor: Colors.black.withOpacity(.12),
@@ -137,7 +136,8 @@ class TopHero extends StatelessWidget {
                       const SizedBox(height: 10),
                       BuyRentSwitch(value: intent, onChanged: onIntentChanged),
                       const SizedBox(height: 10),
-                      const SearchWithFab(),
+                      // Anchor we track for sticky fade logic
+                      SearchWithFab(key: stickyAnchorKey),
                     ],
                   ),
                 ),
