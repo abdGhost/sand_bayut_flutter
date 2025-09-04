@@ -13,6 +13,7 @@ class TopHero extends StatelessWidget {
     required this.intent,
     required this.onIntentChanged,
     this.stickyAnchorKey,
+    this.onSearchTap, // ⬅️ new
   });
 
   final int topTab;
@@ -20,6 +21,7 @@ class TopHero extends StatelessWidget {
   final String intent;
   final ValueChanged<String> onIntentChanged;
   final Key? stickyAnchorKey;
+  final VoidCallback? onSearchTap; // ⬅️ new
 
   static const double _imageHeight = 300;
   static const double _cardHeight = 188;
@@ -136,8 +138,14 @@ class TopHero extends StatelessWidget {
                       const SizedBox(height: 10),
                       BuyRentSwitch(value: intent, onChanged: onIntentChanged),
                       const SizedBox(height: 10),
+
                       // Anchor we track for sticky fade logic
-                      SearchWithFab(key: stickyAnchorKey),
+                      SearchWithFab(
+                        key: stickyAnchorKey,
+                        readOnly: true, // opens the dedicated screen
+                        onTap: onSearchTap,
+                        onFabTap: onSearchTap,
+                      ),
                     ],
                   ),
                 ),

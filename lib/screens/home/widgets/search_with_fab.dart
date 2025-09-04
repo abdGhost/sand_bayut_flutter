@@ -7,20 +7,24 @@ class SearchWithFab extends StatelessWidget {
     this.controller,
     this.onSubmitted,
     this.onChanged,
+    this.onTap,
+    this.onFabTap,
+    this.readOnly = true, // ⬅️ default true so we route to SearchScreen
   });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap; // ⬅️ new
+  final VoidCallback? onFabTap; // ⬅️ new
+  final bool readOnly; // ⬅️ new
 
   @override
   Widget build(BuildContext context) {
-    // Text color for what the user types
-    const textColor = Color(0xFF111827); // near-black (Tailwind slate-900)
-    const hintColor = Color(0xFF6B7280); // subtle grey (slate-500)
+    const textColor = Color(0xFF111827);
+    const hintColor = Color(0xFF6B7280);
 
     return Theme(
-      // Local override so selection (drag highlight) + handles match your brand
       data: Theme.of(context).copyWith(
         textSelectionTheme: TextSelectionThemeData(
           cursorColor: Brand.green,
@@ -34,22 +38,18 @@ class SearchWithFab extends StatelessWidget {
             controller: controller,
             onSubmitted: onSubmitted,
             onChanged: onChanged,
-
-            // 👇 typing text style & cursor look
+            onTap: onTap, // ⬅️ triggers navigation
+            readOnly: readOnly, // ⬅️ blocks keyboard until new screen
             style: const TextStyle(color: textColor, fontSize: 16, height: 1.2),
             cursorColor: Brand.green,
             cursorWidth: 2,
             cursorRadius: const Radius.circular(2),
-
             textInputAction: TextInputAction.search,
-
             decoration: InputDecoration(
               hintText: 'Search for a locality, area or city',
               hintStyle: const TextStyle(color: hintColor),
-
               filled: true,
               fillColor: const Color(0xFFF7FAF9),
-
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
                 borderSide: const BorderSide(color: Brand.borderLight),
@@ -62,8 +62,6 @@ class SearchWithFab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 borderSide: const BorderSide(color: Brand.green, width: 1.6),
               ),
-
-              // extra right padding so text doesn't sit under the button
               contentPadding: const EdgeInsets.fromLTRB(14, 16, 56, 16),
             ),
           ),
@@ -78,10 +76,7 @@ class SearchWithFab extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               child: InkWell(
                 borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  // TODO: hook up to your search flow
-                  // You can also call onSubmitted?.call(controller?.text ?? '');
-                },
+                onTap: onFabTap ?? onTap, // ⬅️ also open search
                 child: const SizedBox(
                   width: 44,
                   height: 44,

@@ -2,6 +2,7 @@ import 'dart:math' show pow;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:sands_bayt/screens/home/search_screen.dart';
 import 'package:sands_bayt/screens/home/widgets/promo_carousel.dart';
 import 'package:sands_bayt/screens/home/widgets/tru_broker_banner.dart';
 import 'widgets/top_hero.dart';
@@ -62,6 +63,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ⬇️ One place to handle navigation to the search page
+  void _openSearch({String? initialQuery}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchScreen(
+          initialQuery: initialQuery ?? '',
+          intent: intent,
+          topTab: topTab,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final safeTop = MediaQuery.of(context).padding.top;
@@ -86,6 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   intent: intent,
                   onIntentChanged: (v) => setState(() => intent = v),
                   stickyAnchorKey: _heroSearchKey, // anchor to track
+                  onSearchTap: () =>
+                      _openSearch(), // ⬅️ open search on hero tap
                 ),
               ),
 
@@ -133,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Sticky full-bleed white bar + search (solid plate, no visible top arc)
           Stack(
             children: [
-              // 1) FULL-WIDTH WHITE BACKPLATE (no see-through, grows with opacity)
+              // 1) FULL-WIDTH WHITE BACKPLATE
               Positioned(
                 top: 0,
                 left: 0,
@@ -153,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // 2) STICKY SEARCH CARD (opaque plate + fading/slide content)
+              // 2) STICKY SEARCH CARD
               Positioned(
                 left: 16,
                 right: 16,
@@ -166,22 +182,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         shadowColor: Colors.black.withOpacity(.12),
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        clipBehavior:
-                            Clip.antiAlias, // keep child neatly rounded
+                        clipBehavior: Clip.antiAlias,
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            // 🔒 No top border -> hides the rounded arc line
-                            border: Border(
-                              left: BorderSide(color: Brand.borderLight),
-                              right: BorderSide(color: Brand.borderLight),
-                              bottom: BorderSide(color: Brand.borderLight),
-                              top: const BorderSide(
-                                color: Colors.transparent,
-                                width: 0,
-                              ),
+                            border: const Border(
+                              left: BorderSide.none,
+                              right: BorderSide.none,
+                              bottom: BorderSide.none,
+                              top: BorderSide
+                                  .none, // ✅ no hairline border is painted
                             ),
                           ),
                         ),
@@ -194,7 +206,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           offset: Offset(0, (1 - _stickyOpacity) * 6),
                           child: Container(
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                            child: const SearchWithFab(),
+                            child: SearchWithFab(
+                              // ⬇️ open search on sticky tap or FAB tap or keyboard submit
+                              readOnly: true,
+                              onTap: _openSearch,
+                              onFabTap: _openSearch,
+                              onSubmitted: (q) => _openSearch(initialQuery: q),
+                            ),
                           ),
                         ),
                       ),
